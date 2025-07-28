@@ -1,0 +1,5 @@
+sumy
+flask
+PyMuPDF
+scikit-learn
+sentence-transformers
