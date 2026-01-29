@@ -1,141 +1,330 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>QueryFlux</title>
-  <style>
-    body {
-      background-color: #0d1117;
-      color: #c9d1d9;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      margin: 0;
-      padding: 0;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 40px auto;
-      padding: 30px;
-      background-color: #161b22;
-      border-radius: 10px;
-      box-shadow: 0 0 20px rgba(0, 255, 255, 0.1);
-    }
-
-    h1 {
-      text-align: center;
-      color: #00ffee;
-      font-size: 2.5rem;
-      margin-bottom: 25px;
-    }
-
-    form {
-      margin-bottom: 30px;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin: 15px 0 5px;
-      font-size: 16px;
-    }
-
-    input[type="file"],
-    input[type="text"] {
-      width: 100%;
-      padding: 12px;
-      border-radius: 6px;
-      background-color: #21262d;
-      border: 1px solid #30363d;
-      color: #f0f6fc;
-      font-size: 15px;
-    }
-
-    input[type="submit"] {
-      background: linear-gradient(45deg, #00ffee, #0066ff);
-      border: none;
-      padding: 12px 20px;
-      border-radius: 6px;
-      color: #000;
-      font-weight: bold;
-      font-size: 15px;
-      cursor: pointer;
-      margin-top: 15px;
-      transition: 0.3s ease;
-    }
-
-    input[type="submit"]:hover {
-      opacity: 0.9;
-    }
-
-    .checkbox-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-
-    textarea {
-      width: 100%;
-      height: 250px;
-      padding: 15px;
-      border-radius: 8px;
-      background-color: #0d1117;
-      color: #f0f6fc;
-      font-size: 15px;
-      border: 1px solid #30363d;
-      margin-top: 10px;
-      resize: vertical;
-    }
-
-    .section-title {
-      margin-top: 40px;
-      font-size: 20px;
-      color: #58a6ff;
-    }
-
-    .emoji {
-      margin-right: 8px;
-    }
-
-    ::file-selector-button {
-      background: #30363d;
-      border: none;
-      color: #58a6ff;
-      padding: 5px 10px;
-      border-radius: 5px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QueryFlux - PDF Q&A System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-  <div class="container">
-    <h1>🚀 QueryFlux</h1>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1>🚀 QueryFlux</h1>
+                <p class="subtitle">Intelligent PDF Question Answering & Summarization System</p>
+                <p class="description">Upload PDFs and get instant answers powered by RAG (Retrieval-Augmented Generation)</p>
+            </div>
+        </header>
 
-    <!-- Upload PDF Form -->
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <label for="pdfs">📄 Upload PDF(s):</label>
-      <input type="file" name="pdfs" multiple required />
-      <input type="submit" value="Upload PDFs" />
-    </form>
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Upload Section -->
+            <section class="section upload-section">
+                <div class="section-header">
+                    <h2>📤 Upload PDF Documents</h2>
+                    <p>Select one or multiple PDF files to analyze</p>
+                </div>
+                
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-content">
+                        <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <h3>Drag & Drop PDFs here</h3>
+                        <p>or click to select files</p>
+                        <input type="file" id="fileInput" accept=".pdf" multiple hidden>
+                    </div>
+                </div>
 
-    <!-- Ask Question Form -->
-    <form action="/ask" method="post">
-      <label for="question">🤖 Ask a Question:</label>
-      <input type="text" name="question" placeholder="e.g. What is the abstract?" required />
+                <div class="file-list" id="fileList"></div>
 
-      <div class="checkbox-group">
-        <input type="checkbox" name="summary" id="summary" />
-        <label for="summary">📃 Show Summary</label>
-      </div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="uploadFiles()">
+                        📤 Upload & Process PDFs
+                    </button>
+                    <button class="btn btn-secondary" onclick="clearPDFs()" id="clearBtn" style="display: none;">
+                        🗑️ Clear & Upload New
+                    </button>
+                </div>
 
-      <input type="submit" value="Get Answer" />
-    </form>
+                <div class="status-box" id="uploadStatus" style="display: none;"></div>
+            </section>
 
-    <!-- Output Area -->
-    {% if result %}
-      <h2 class="section-title">📊 Output:</h2>
-      <textarea readonly>{{ result | safe }}</textarea>
-    {% endif %}
-  </div>
+            <!-- Question Section -->
+            <section class="section question-section" id="questionSection" style="display: none;">
+                <div class="section-header">
+                    <h2>❓ Ask Questions</h2>
+                    <p>Query the uploaded documents</p>
+                </div>
+
+                <div class="question-form">
+                    <div class="input-group">
+                        <input 
+                            type="text" 
+                            id="questionInput" 
+                            placeholder="What do you want to know? e.g., 'What is the main topic?', 'Explain abstract...'"
+                            class="question-input"
+                            onkeypress="if(event.key==='Enter') askQuestion()"
+                        >
+                        <button class="btn btn-primary" onclick="askQuestion()">
+                            🔍 Get Answer
+                        </button>
+                    </div>
+
+                    <div class="options">
+                        <label class="checkbox">
+                            <input type="checkbox" id="summaryCheckbox">
+                            <span>📄 Include Summary</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="loading" id="loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Searching documents...</p>
+                </div>
+
+                <!-- Answer Display -->
+                <div class="answer-section" id="answerSection" style="display: none;">
+                    <div class="answer-header">
+                        <h3>✅ Answer</h3>
+                        <button class="btn-small" onclick="copyAnswer()">📋 Copy</button>
+                    </div>
+                    <div class="answer-content" id="answerContent"></div>
+
+                    <!-- Summary Display -->
+                    <div class="summary-section" id="summarySection" style="display: none;">
+                        <div class="summary-header">
+                            <h3>📄 Document Summary</h3>
+                        </div>
+                        <div class="summary-content" id="summaryContent"></div>
+                    </div>
+                </div>
+
+                <!-- Error Display -->
+                <div class="error-box" id="errorBox" style="display: none;"></div>
+            </section>
+
+            <!-- Status Section -->
+            <section class="section status-section" id="statusSection" style="display: none;">
+                <div class="status-info">
+                    <h3>📊 Document Status</h3>
+                    <div class="status-details">
+                        <p>✓ PDFs loaded and processed</p>
+                        <p id="chunkInfo"></p>
+                        <p>✓ Ready to answer questions</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>QueryFlux v1.0 | Powered by RAG & Sentence Transformers</p>
+            <p>Built with Flask, PyMuPDF, and Semantic Embeddings</p>
+        </footer>
+    </div>
+
+    <script>
+        let selectedFiles = [];
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).filter(f => f.type === 'application/pdf');
+            updateFileList();
+        }
+
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
+            
+            if (selectedFiles.length > 0) {
+                fileList.innerHTML = '<h4>Selected Files:</h4>';
+                selectedFiles.forEach(file => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'file-item';
+                    fileItem.textContent = `📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    fileList.appendChild(fileItem);
+                });
+            }
+        }
+
+        function uploadFiles() {
+            if (selectedFiles.length === 0) {
+                showStatus('⚠️ Please select at least one PDF file', 'warning');
+                return;
+            }
+
+            const formData = new FormData();
+            selectedFiles.forEach(file => {
+                formData.append('pdfs', file);
+            });
+
+            const uploadStatus = document.getElementById('uploadStatus');
+            uploadStatus.style.display = 'block';
+            uploadStatus.innerHTML = '<div class="loading"><div class="spinner"></div>Processing PDFs...</div>';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    uploadStatus.innerHTML = `<div class="success-box">${data.message}</div>`;
+                    selectedFiles = [];
+                    updateFileList();
+                    showQuestionSection();
+                    setTimeout(() => {
+                        uploadStatus.style.display = 'none';
+                    }, 3000);
+                } else {
+                    showStatus(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                showStatus(`Error: ${error.message}`, 'error');
+            });
+        }
+
+        function showQuestionSection() {
+            document.getElementById('questionSection').style.display = 'block';
+            document.getElementById('statusSection').style.display = 'block';
+            document.getElementById('clearBtn').style.display = 'inline-block';
+            updateStatus();
+        }
+
+        function updateStatus() {
+            fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.ready) {
+                    document.getElementById('chunkInfo').textContent = `✓ ${data.chunks} text chunks indexed`;
+                }
+            });
+        }
+
+        function askQuestion() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) {
+                showStatus('⚠️ Please enter a question', 'warning');
+                return;
+            }
+
+            const includeSummary = document.getElementById('summaryCheckbox').checked;
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('answerSection').style.display = 'none';
+            document.getElementById('errorBox').style.display = 'none';
+
+            fetch('/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question: question,
+                    include_summary: includeSummary
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success) {
+                    document.getElementById('answerContent').innerHTML = formatAnswer(data.answer);
+                    document.getElementById('answerSection').style.display = 'block';
+
+                    if (data.summary) {
+                        document.getElementById('summaryContent').innerHTML = formatAnswer(data.summary);
+                        document.getElementById('summarySection').style.display = 'block';
+                    } else {
+                        document.getElementById('summarySection').style.display = 'none';
+                    }
+                } else {
+                    showError(data.message);
+                }
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                showError(`Error: ${error.message}`);
+            });
+        }
+
+        function formatAnswer(text) {
+            // Escape HTML and preserve newlines, but keep mark tags
+            let formatted = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/&lt;mark&gt;/g, '<mark>')
+                .replace(/&lt;\/mark&gt;/g, '</mark>')
+                .replace(/\n/g, '<br>');
+            return formatted;
+        }
+
+        function copyAnswer() {
+            const answerText = document.getElementById('answerContent').innerText;
+            navigator.clipboard.writeText(answerText).then(() => {
+                alert('✓ Answer copied to clipboard!');
+            });
+        }
+
+        function showStatus(message, type) {
+            const uploadStatus = document.getElementById('uploadStatus');
+            uploadStatus.style.display = 'block';
+            uploadStatus.className = `status-box ${type}-box`;
+            uploadStatus.textContent = message;
+        }
+
+        function showError(message) {
+            const errorBox = document.getElementById('errorBox');
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<strong>❌ Error:</strong> ${message}`;
+        }
+
+        function clearPDFs() {
+            if (confirm('Are you sure you want to clear all uploaded PDFs?')) {
+                fetch('/clear', {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    showStatus(data.message, 'success');
+                    document.getElementById('questionSection').style.display = 'none';
+                    document.getElementById('statusSection').style.display = 'none';
+                    document.getElementById('clearBtn').style.display = 'none';
+                    document.getElementById('uploadStatus').style.display = 'none';
+                });
+            }
+        }
+    </script>
 </body>
 </html>
